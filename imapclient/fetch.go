@@ -321,6 +321,9 @@ type FetchItemDataBodySection struct {
 func (FetchItemDataBodySection) fetchItemData() {}
 
 func (item FetchItemDataBodySection) discard() {
+	if item.Literal == nil {
+		return
+	}
 	io.Copy(io.Discard, item.Literal)
 }
 
@@ -333,6 +336,9 @@ type FetchItemDataBinarySection struct {
 func (FetchItemDataBinarySection) fetchItemData() {}
 
 func (item FetchItemDataBinarySection) discard() {
+	if item.Literal == nil {
+		return
+	}
 	io.Copy(io.Discard, item.Literal)
 }
 
