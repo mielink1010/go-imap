@@ -693,7 +693,8 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 	var code string
 	if hasSP && c.dec.Special('[') { // resp-text-code
 		if !c.dec.ExpectAtom(&code) {
-			return nil, fmt.Errorf("in resp-text-code: %v", c.dec.Err())
+			err = fmt.Errorf("in resp-text-code: %v", c.dec.Err())
+			return nil, err
 		}
 		// TODO: LONGENTRIES and MAXSIZE from METADATA
 		switch code {
@@ -709,7 +710,8 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 				uid         imap.UID
 			)
 			if !c.dec.ExpectSP() || !c.dec.ExpectNumber(&uidValidity) || !c.dec.ExpectSP() || !c.dec.ExpectUID(&uid) {
-				return nil, fmt.Errorf("in resp-code-apnd: %v", c.dec.Err())
+				err = fmt.Errorf("in resp-code-apnd: %v", c.dec.Err())
+				return nil, err
 			}
 			if cmd, ok := cmd.(*AppendCommand); ok {
 				cmd.data.UID = uid
@@ -717,7 +719,8 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 			}
 		case "COPYUID":
 			if !c.dec.ExpectSP() {
-				return nil, c.dec.Err()
+				err =  c.dec.Err()
+				return nil, err
 			}
 			uidValidity, srcUIDs, dstUIDs, err := readRespCodeCopyUID(c.dec)
 			if err != nil {
@@ -734,13 +737,15 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 			}
 		}
 		if !c.dec.ExpectSpecial(']') {
-			return nil, fmt.Errorf("in resp-text: %v", c.dec.Err())
+			err =  fmt.Errorf("in resp-text: %v", c.dec.Err())
+			return nil, err
 		}
 		hasSP = c.dec.SP()
 	}
 	var text string
 	if hasSP && !c.dec.ExpectText(&text) {
-		return nil, fmt.Errorf("in resp-text: %v", c.dec.Err())
+		err =  fmt.Errorf("in resp-text: %v", c.dec.Err())
+		return nil, err
 	}
 
 	var cmdErr error
@@ -754,7 +759,8 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 			Text: text,
 		}
 	default:
-		return nil, fmt.Errorf("in resp-cond-state: expected OK, NO or BAD status condition, but got %v", typ)
+		err = fmt.Errorf("in resp-cond-state: expected OK, NO or BAD status condition, but got %v", typ)
+		return nil, err
 	}
 
 	c.completeCommand(cmd, cmdErr)
