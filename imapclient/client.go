@@ -37,7 +37,7 @@ import (
 	"github.com/emersion/go-imap/v2/internal/imapwire"
 )
 
-const (
+var (
 	idleReadTimeout    = time.Duration(0)
 	respReadTimeout    = 30 * time.Second
 	literalReadTimeout = 5 * time.Minute
@@ -47,7 +47,7 @@ const (
 )
 
 var dialer = &net.Dialer{
-	Timeout: 30 * time.Second,
+	Timeout: respReadTimeout,
 }
 
 // SelectedMailbox contains metadata for the currently selected mailbox.
@@ -75,7 +75,9 @@ type Options struct {
 	// Unilateral data handler.
 	UnilateralDataHandler *UnilateralDataHandler
 	// Decoder for RFC 2047 words.
-	WordDecoder *mime.WordDecoder
+	WordDecoder    *mime.WordDecoder
+	ReadTimeout    time.Duration
+	LiteralTimeout time.Duration
 }
 
 func (options *Options) wrapReadWriter(rw io.ReadWriter) io.ReadWriter {
@@ -166,6 +168,11 @@ func New(conn net.Conn, options *Options) *Client {
 	if options == nil {
 		options = &Options{}
 	}
+
+	respReadTimeout = options.ReadTimeout
+	cmdWriteTimeout = options.ReadTimeout
+	literalReadTimeout = options.LiteralTimeout
+	literalWriteTimeout = options.LiteralTimeout
 
 	rw := options.wrapReadWriter(conn)
 	br := bufio.NewReader(rw)
@@ -719,7 +726,7 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 			}
 		case "COPYUID":
 			if !c.dec.ExpectSP() {
-				err =  c.dec.Err()
+				err = c.dec.Err()
 				return nil, err
 			}
 			uidValidity, srcUIDs, dstUIDs, err := readRespCodeCopyUID(c.dec)
@@ -737,14 +744,14 @@ func (c *Client) readResponseTagged(tag, typ string) (startTLS *startTLSCommand,
 			}
 		}
 		if !c.dec.ExpectSpecial(']') {
-			err =  fmt.Errorf("in resp-text: %v", c.dec.Err())
+			err = fmt.Errorf("in resp-text: %v", c.dec.Err())
 			return nil, err
 		}
 		hasSP = c.dec.SP()
 	}
 	var text string
 	if hasSP && !c.dec.ExpectText(&text) {
-		err =  fmt.Errorf("in resp-text: %v", c.dec.Err())
+		err = fmt.Errorf("in resp-text: %v", c.dec.Err())
 		return nil, err
 	}
 
