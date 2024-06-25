@@ -423,6 +423,9 @@ type FetchMessageBuffer struct {
 func (buf *FetchMessageBuffer) populateItemData(item FetchItemData) error {
 	switch item := item.(type) {
 	case FetchItemDataBodySection:
+		if item.Literal == nil {
+		        return fmt.Errorf("Literal is nil")
+	        }
 		b, err := io.ReadAll(item.Literal)
 		if err != nil {
 			return err
@@ -457,7 +460,7 @@ func (buf *FetchMessageBuffer) populateItemData(item FetchItemData) error {
 	case FetchItemDataModSeq:
 		buf.ModSeq = item.ModSeq
 	default:
-		panic(fmt.Errorf("unsupported fetch item data %T", item))
+		panic(fmt.Errorf("unsupported fetch item data %T", r
 	}
 	return nil
 }
