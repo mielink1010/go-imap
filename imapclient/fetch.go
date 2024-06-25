@@ -460,7 +460,7 @@ func (buf *FetchMessageBuffer) populateItemData(item FetchItemData) error {
 	case FetchItemDataModSeq:
 		buf.ModSeq = item.ModSeq
 	default:
-		panic(fmt.Errorf("unsupported fetch item data %T", r
+		panic(fmt.Errorf("unsupported fetch item data %T", item))
 	}
 	return nil
 }
